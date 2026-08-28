@@ -71,7 +71,7 @@
                             "",
                             "if (pm.response.code === 202) {",
                             "    var jsonData = pm.response.json();",
-                            "    pm.collection.variables.set(\"lastDocumentId\", jsonData.documentId);",
+                            "    pm.collectionVariables.set(\"lastDocumentId\", jsonData.documentId);",
                             "    pm.test(\"response has PROCESSING status and documentId\", function () {",
                             "        pm.expect(jsonData.status).to.eql(\"PROCESSING\");",
                             "        pm.expect(jsonData.isTerminal).to.eql(false);",
@@ -338,7 +338,7 @@
                             "",
                             "pm.test(\"6. Duplicate retry: documentId matches request 1\", function () {",
                             "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.documentId).to.eql(pm.collection.variables.get(\"lastDocumentId\"));",
+                            "    pm.expect(jsonData.documentId).to.eql(pm.collectionVariables.get(\"lastDocumentId\"));",
                             "});"
                         ]
                     }
@@ -754,7 +754,7 @@
                             "});",
                             "",
                             "if (pm.response.code === 202) {",
-                            "    pm.collection.variables.set(\"auditDocumentId\", pm.response.json().documentId);",
+                            "    pm.collectionVariables.set(\"auditDocumentId\", pm.response.json().documentId);",
                             "}"
                         ]
                     }
@@ -827,8 +827,8 @@
                     "// Generate a run-scoped suffix once per collection run so hardcoded",
                     "// Idempotency-Key values below don't collide with documents already",
                     "// persisted (in invoices.db) from a previous run of this collection.",
-                    "if (!pm.collection.variables.get('runId')) {",
-                    "    pm.collection.variables.set('runId', pm.variables.replaceIn('{{$guid}}'));",
+                    "if (!pm.collectionVariables.get('runId')) {",
+                    "    pm.collectionVariables.set('runId', pm.variables.replaceIn('{{$guid}}'));",
                     "}"
                 ]
             }
