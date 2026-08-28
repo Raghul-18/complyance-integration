@@ -1,0 +1,7 @@
+{
+  "name": "local",
+  "values": [
+    {"key": "baseUrl", "value": "http://localhost:8000", "enabled": true},
+    {"key": "TRAINING_API_KEY", "value": "changeme-training-key", "enabled": true}
+  ]
+}

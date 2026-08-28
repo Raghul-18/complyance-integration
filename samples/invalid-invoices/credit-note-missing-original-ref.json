@@ -2,9 +2,9 @@
   "sourceName": "desert-star-erp",
   "sourceVersion": "1.0",
   "invoice": {
-    "invoiceNo": "INV-2025-1001",
+    "invoiceNo": "INV-2025-1006",
     "issueDate": "2025-02-15",
-    "documentType": "INVOICE",
+    "documentType": "CREDIT_NOTE",
     "currency": "AED",
     "seller": {
       "legalName": "Desert Star Trading LLC",
@@ -28,7 +28,7 @@
         "sku": "CONSULT-001",
         "description": "Implementation consulting",
         "quantity": 2,
-        "unitPrice": 1000.00,
+        "unitPrice": 1000.0,
         "taxCategory": "STANDARD",
         "taxRate": 5
       },
@@ -37,17 +37,17 @@
         "sku": "TRAIN-001",
         "description": "User training",
         "quantity": 1,
-        "unitPrice": 500.00,
+        "unitPrice": 500.0,
         "taxCategory": "STANDARD",
         "taxRate": 5
       }
     ],
     "totals": {
-      "netAmount": 2500.00,
-      "taxAmount": 125.00,
-      "grossAmount": 2625.00,
-      "prepaidAmount": 0.00,
-      "amountDue": 2625.00
+      "netAmount": 2500.0,
+      "taxAmount": 125.0,
+      "grossAmount": 2625.0,
+      "prepaidAmount": 0.0,
+      "amountDue": 2625.0
     },
     "payment": {
       "method": "BANK_TRANSFER",
