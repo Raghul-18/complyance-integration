@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from decimal import Decimal
 from typing import Any, Dict, Optional
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -42,6 +42,15 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Complyance Integration Prototype", version="1.0", lifespan=lifespan)
 
 REVIEW_THRESHOLD_GROSS = Decimal("1000000.00")
+
+
+# ---------------------------------------------------------------------------
+# HTTPException handler
+# ---------------------------------------------------------------------------
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    content = exc.detail if isinstance(exc.detail, dict) else {"error": "HTTP_ERROR", "message": str(exc.detail)}
+    return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
 
 
 # ---------------------------------------------------------------------------

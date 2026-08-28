@@ -2,8 +2,9 @@
 Runtime configuration, read entirely from environment variables.
 """
 import os
+from dotenv import load_dotenv
 
-
+load_dotenv()
 class Settings:
     def __init__(self) -> None:
         self.api_key: str = os.environ.get("TRAINING_API_KEY", "")
