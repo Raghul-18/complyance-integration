@@ -18,6 +18,11 @@ TRN_RE = re.compile(r"^\d{15}$")
 COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+# Payment method is required by the assessment rules; no closed enum is
+# specified, so we only require a non-empty string. (Open question: should
+# this be constrained to a fixed list, e.g. BANK_TRANSFER/CASH/CARD/OTHER?)
+
+
 
 class ValidationIssue:
     __slots__ = ("field", "code", "message")
@@ -72,7 +77,9 @@ def validate_structure(body: Any) -> List[ValidationIssue]:
     return issues
 
 
-def _validate_party(party: Any, path: str, require_trn: bool) -> List[ValidationIssue]:
+def _validate_party(
+    party: Any, path: str, require_trn: bool, require_emirate: bool = False
+) -> List[ValidationIssue]:
     issues: List[ValidationIssue] = []
     if not isinstance(party, dict):
         issues.append(ValidationIssue(path, "MISSING_FIELD", f"'{path}' is required."))
@@ -94,6 +101,11 @@ def _validate_party(party: Any, path: str, require_trn: bool) -> List[Validation
     addr = party.get("addressLine1")
     if not isinstance(addr, str) or not addr.strip():
         issues.append(ValidationIssue(f"{path}.addressLine1", "REQUIRED", "addressLine1 must not be empty."))
+
+    if require_emirate:
+        emirate = party.get("emirate")
+        if not isinstance(emirate, str) or not emirate.strip():
+            issues.append(ValidationIssue(f"{path}.emirate", "REQUIRED", "emirate must not be empty."))
 
     country = party.get("country")
     if not isinstance(country, str) or not COUNTRY_RE.match(country):
@@ -148,7 +160,18 @@ def _validate_lines(lines: Any) -> Tuple[List[ValidationIssue], List[Dict[str, D
         else:
             expected_rate = STANDARD_TAX_RATE if category == "STANDARD" else NON_STANDARD_TAX_RATE
 
-        submitted_rate = _to_decimal(line.get("taxRate"))
+        if "taxRate" not in line or line.get("taxRate") is None:
+            issues.append(
+                ValidationIssue(f"{path}.taxRate", "REQUIRED", "taxRate must not be empty.")
+            )
+            submitted_rate = None
+        else:
+            submitted_rate = _to_decimal(line.get("taxRate"))
+            if submitted_rate is None:
+                issues.append(
+                    ValidationIssue(f"{path}.taxRate", "INVALID_VALUE", "taxRate must be numeric.")
+                )
+
         if expected_rate is not None and submitted_rate is not None and submitted_rate != expected_rate:
             issues.append(
                 ValidationIssue(
@@ -214,8 +237,20 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
     else:
         CURRENCY_VALIDATORS[currency](invoice)
 
-    issues.extend(_validate_party(invoice.get("seller"), "invoice.seller", require_trn=True))
+    issues.extend(
+        _validate_party(invoice.get("seller"), "invoice.seller", require_trn=True, require_emirate=True)
+    )
     issues.extend(_validate_party(invoice.get("buyer"), "invoice.buyer", require_trn=False))
+
+    payment = invoice.get("payment")
+    if not isinstance(payment, dict):
+        issues.append(ValidationIssue("invoice.payment", "REQUIRED", "payment is required."))
+    else:
+        method = payment.get("method")
+        if not isinstance(method, str) or not method.strip():
+            issues.append(
+                ValidationIssue("invoice.payment.method", "REQUIRED", "payment.method must not be empty.")
+            )
 
     if doc_type == "CREDIT_NOTE":
         original_no = invoice.get("originalInvoiceNo")
@@ -269,5 +304,30 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
                         f"Expected {computed_gross}, got {totals.get('grossAmount')}.",
                     )
                 )
+
+            # amountDue is required by the assessment rules but no explicit
+            # formula is given. Assumption: amountDue = grossAmount - prepaidAmount,
+            # using the submitted grossAmount (already checked above) and a
+            # prepaidAmount that defaults to 0 when absent.
+            submitted_amount_due = _to_decimal(totals.get("amountDue"))
+            if submitted_amount_due is None:
+                issues.append(
+                    ValidationIssue(
+                        "invoice.totals.amountDue", "REQUIRED", "amountDue must not be empty."
+                    )
+                )
+            elif submitted_gross is not None:
+                prepaid = _to_decimal(totals.get("prepaidAmount"))
+                if prepaid is None:
+                    prepaid = Decimal("0")
+                expected_amount_due = _round2(_round2(submitted_gross) - _round2(prepaid))
+                if _round2(submitted_amount_due) != expected_amount_due:
+                    issues.append(
+                        ValidationIssue(
+                            "invoice.totals.amountDue",
+                            "MISMATCH",
+                            f"Expected {expected_amount_due}, got {totals.get('amountDue')}.",
+                        )
+                    )
 
     return issues
