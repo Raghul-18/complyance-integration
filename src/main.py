@@ -21,6 +21,7 @@ from src.config import settings
 from src.logging_config import correlation_id, log_exception, log_info, log_warning, payload_metadata_for_log
 from src.mapping import map_to_normalized
 from src.persistence import (
+    DuplicateInvoiceNumberError,
     IdempotencyConflict,
     get_audit_log,
     get_by_document_id,
@@ -213,6 +214,24 @@ async def submit_invoice(request: Request):
             content={
                 "error": "IDEMPOTENCY_KEY_REUSE_MISMATCH",
                 "message": "This idempotency key was already used with a different payload.",
+            },
+        )
+    except DuplicateInvoiceNumberError as exc:
+        log_info(
+            "duplicate_invoice_number",
+            invoice_no=invoice_no,
+            idempotency_key=idempotency_key,
+            existing_document_id=exc.existing_document_id,
+        )
+        write_audit_log(
+            "DUPLICATE_INVOICE_NUMBER_REJECTED", correlation_id=cid, invoice_no=invoice_no,
+            idempotency_key=idempotency_key, details={"existingDocumentId": exc.existing_document_id},
+        )
+        return JSONResponse(
+            status_code=409,
+            content={
+                "error": "DUPLICATE_INVOICE_NUMBER",
+                "message": f"invoiceNo {invoice_no!r} has already been submitted as a different document.",
             },
         )
 

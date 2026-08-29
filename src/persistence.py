@@ -56,6 +56,17 @@ def _connect():
 def init_db() -> None:
     with _lock, _connect() as conn:
         conn.executescript(SCHEMA)
+        # Enforce ERP invoice-number uniqueness as its own index (rather than
+        # inline on the column) so it also applies to a database created
+        # before this constraint existed.
+        # Assumption: uniqueness is scoped globally across all documents in
+        # this single-tenant prototype, not per sourceName. A multi-ERP
+        # production deployment would likely need a composite
+        # (source_name, invoice_no) constraint instead -- open question for
+        # the customer's IT team.
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_documents_invoice_no ON documents(invoice_no)"
+        )
         conn.commit()
 
 
@@ -94,6 +105,19 @@ class IdempotencyConflict(Exception):
     """Raised when the idempotency key exists with a DIFFERENT payload hash."""
 
 
+class DuplicateInvoiceNumberError(Exception):
+    """
+    Raised when invoice_no already belongs to a different document (i.e. a
+    different idempotency key). This is NOT a safe retry of the same
+    request -- it means the same ERP invoice number is being submitted as
+    what looks like a brand-new document.
+    """
+
+    def __init__(self, message: str, existing_document_id: str):
+        super().__init__(message)
+        self.existing_document_id = existing_document_id
+
+
 def insert_new_document(
     document_id: str,
     invoice_no: str,
@@ -109,6 +133,8 @@ def insert_new_document(
     Returns the existing record instead of inserting if the same key +
     same payload hash already exists (idempotent replay). Raises
     IdempotencyConflict if the key exists with a DIFFERENT payload hash.
+    Raises DuplicateInvoiceNumberError if invoice_no already belongs to a
+    different document under a different idempotency key.
     """
     now = _now()
     with _lock, _connect() as conn:
@@ -138,17 +164,40 @@ def insert_new_document(
                 normalized_payload, status, errors, now, now,
             )
         except sqlite3.IntegrityError:
+            # First check whether this is a safe retry: the same
+            # idempotency_key was used before. If so, the retry semantics
+            # (same payload -> return existing, different payload -> raise
+            # IdempotencyConflict) take priority over the invoice_no check,
+            # since it's the same logical request.
             row = conn.execute(
                 "SELECT * FROM documents WHERE idempotency_key = ?", (idempotency_key,)
             ).fetchone()
-            if row is None:
-                raise IdempotencyConflict("idempotency_key present but record unreadable")
-            existing = DocumentRecord.from_row(row)
-            if existing.payload_hash != payload_hash:
-                raise IdempotencyConflict(
-                    f"idempotency_key {idempotency_key!r} reused with a different payload"
+            if row is not None:
+                existing = DocumentRecord.from_row(row)
+                if existing.payload_hash != payload_hash:
+                    raise IdempotencyConflict(
+                        f"idempotency_key {idempotency_key!r} reused with a different payload"
+                    )
+                return existing
+
+            # Not an idempotency-key collision -- check whether invoice_no
+            # itself already belongs to a different document. This is a
+            # genuine duplicate submission (e.g. a client that doesn't
+            # reuse Idempotency-Key on retry, or the same invoice sent
+            # twice by mistake), not a safe retry.
+            dup_row = conn.execute(
+                "SELECT * FROM documents WHERE invoice_no = ?", (invoice_no,)
+            ).fetchone()
+            if dup_row is not None:
+                existing = DocumentRecord.from_row(dup_row)
+                raise DuplicateInvoiceNumberError(
+                    f"invoice_no {invoice_no!r} already exists as document {existing.document_id!r}",
+                    existing_document_id=existing.document_id,
                 )
-            return existing
+
+            # Some other integrity error we don't have a specific handler
+            # for -- surface it rather than mask it.
+            raise
 
 
 def get_by_document_id(document_id: str) -> Optional[DocumentRecord]:

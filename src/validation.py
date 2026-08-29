@@ -18,11 +18,6 @@ TRN_RE = re.compile(r"^\d{15}$")
 COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-# Payment method is required by the assessment rules; no closed enum is
-# specified, so we only require a non-empty string. (Open question: should
-# this be constrained to a fixed list, e.g. BANK_TRANSFER/CASH/CARD/OTHER?)
-
-
 
 class ValidationIssue:
     __slots__ = ("field", "code", "message")
@@ -280,7 +275,13 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
             submitted_tax = _to_decimal(totals.get("taxAmount"))
             submitted_gross = _to_decimal(totals.get("grossAmount"))
 
-            if submitted_net is None or _round2(submitted_net) != computed_net:
+            if submitted_net is None:
+                issues.append(
+                    ValidationIssue(
+                        "invoice.totals.netAmount", "REQUIRED", "netAmount must not be empty."
+                    )
+                )
+            elif _round2(submitted_net) != computed_net:
                 issues.append(
                     ValidationIssue(
                         "invoice.totals.netAmount",
@@ -288,7 +289,13 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
                         f"Expected {computed_net}, got {totals.get('netAmount')}.",
                     )
                 )
-            if submitted_tax is None or _round2(submitted_tax) != computed_tax:
+            if submitted_tax is None:
+                issues.append(
+                    ValidationIssue(
+                        "invoice.totals.taxAmount", "REQUIRED", "taxAmount must not be empty."
+                    )
+                )
+            elif _round2(submitted_tax) != computed_tax:
                 issues.append(
                     ValidationIssue(
                         "invoice.totals.taxAmount",
@@ -296,7 +303,13 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
                         f"Expected {computed_tax}, got {totals.get('taxAmount')}.",
                     )
                 )
-            if submitted_gross is None or _round2(submitted_gross) != computed_gross:
+            if submitted_gross is None:
+                issues.append(
+                    ValidationIssue(
+                        "invoice.totals.grossAmount", "REQUIRED", "grossAmount must not be empty."
+                    )
+                )
+            elif _round2(submitted_gross) != computed_gross:
                 issues.append(
                     ValidationIssue(
                         "invoice.totals.grossAmount",
@@ -305,10 +318,8 @@ def validate_invoice(body: Dict[str, Any]) -> List[ValidationIssue]:
                     )
                 )
 
-            # amountDue is required by the assessment rules but no explicit
-            # formula is given. Assumption: amountDue = grossAmount - prepaidAmount,
-            # using the submitted grossAmount (already checked above) and a
-            # prepaidAmount that defaults to 0 when absent.
+            # amountDue is required by the assessment rules but no explicit formula is given. 
+            # Assumption: amountDue = grossAmount - prepaidAmount,
             submitted_amount_due = _to_decimal(totals.get("amountDue"))
             if submitted_amount_due is None:
                 issues.append(

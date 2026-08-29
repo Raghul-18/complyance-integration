@@ -2,6 +2,8 @@
 
 This document defines how fields from the `desert-star-erp` payload are mapped to the normalized invoice structure.
 
+> **Verification note:** every row below was cross-checked against the actual `validate_invoice` logic in `src/validation.py`, not just against the assessment's plain-language rules. Two rows (seller/buyer `city`, and buyer `emirate`) originally stated a validation the code doesn't actually enforce; those rows have been corrected to reflect current behavior and flagged as open questions rather than left silently wrong.
+
 ## 1. Source name and source version
 
 | Source field | Target field | Required/conditional | Transformation/default | Validation | Open question |
@@ -25,7 +27,7 @@ This document defines how fields from the `desert-star-erp` payload are mapped t
 | `invoice.seller.legalName` | `seller.legalName` | Required | Passed through as-is | Must not be empty | — |
 | `invoice.seller.trn` | `seller.trn` | Required | Passed through as-is | Must contain exactly 15 numeric digits | Is registry level TRN validation required? |
 | `invoice.seller.addressLine1` | `seller.address.line1` | Required | Passed through as-is | Must not be empty | — |
-| `invoice.seller.city` | `seller.address.city` | Required | Passed through as-is | Must not be empty | — |
+| `invoice.seller.city` | `seller.address.city` | Optional (per current code) | Passed through as-is | **Not validated** — `validate_invoice` never checks `city` for emptiness | Should city be a required, validated field? (Currently accepted even if blank/missing.) |
 | `invoice.seller.emirate` | `seller.address.emirate` | Required | Passed through as-is | Must not be empty | Should emirate be checked against a fixed list? |
 | `invoice.seller.country` | `seller.address.country` | Required | Passed through as-is | Must be a two letter uppercase country code | — |
 
@@ -36,8 +38,8 @@ This document defines how fields from the `desert-star-erp` payload are mapped t
 | `invoice.buyer.legalName` | `buyer.legalName` | Required | Passed through as-is | Must not be empty | — |
 | `invoice.buyer.trn` | Not mapped | Optional / not required | Not included in normalized output | Not validated | Should buyer TRN be included in the normalized structure? |
 | `invoice.buyer.addressLine1` | `buyer.address.line1` | Required | Passed through as-is | Must not be empty | — |
-| `invoice.buyer.city` | `buyer.address.city` | Required | Passed through as-is | Must not be empty | — |
-| `invoice.buyer.emirate` | `buyer.address.emirate` | Required | Passed through as-is | Must not be empty | — |
+| `invoice.buyer.city` | `buyer.address.city` | Optional (per current code) | Passed through as-is | **Not validated** — same gap as seller city | Should city be a required, validated field? |
+| `invoice.buyer.emirate` | `buyer.address.emirate` | Optional (per current code) | Passed through as-is | **Not validated** — `_validate_party` is called for the buyer with `require_emirate` left at its default of `False`, unlike the seller | Is this an intentional asymmetry (only sellers must be in a UAE emirate) or a gap? Should buyer emirate be validated the same way as seller emirate? |
 | `invoice.buyer.country` | `buyer.address.country` | Required | Passed through as-is | Must be a two letter uppercase country code | — |
 
 ## 5. Lines and tax information
