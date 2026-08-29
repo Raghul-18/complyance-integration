@@ -200,7 +200,7 @@ Generative AI (Claude) was used during this project as follows:
   and identifying and fixing discrepancies between the diagram and the
   code's real behavior.
 - Assisting in generating code as per the design and flow.
-- Drafting this README.
+- Drafting this README and other documents.
 - Generating synthetic JSON invoices.
 - Verifying logic and test scenario
 
