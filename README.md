@@ -207,15 +207,15 @@ Generative AI (Claude) was used during this project as follows:
 
 ## Approximate time spent
 
-*[Fill in.]*
+Approximately 8 hours.
 
 ## Candidate declaration
 
-- [ ] I used only synthetic data.
-- [ ] I did not include credentials or confidential third-party information.
-- [ ] I have listed material external resources, reused code, and tools
+- [x] I used only synthetic data.
+- [x] I did not include credentials or confidential third-party information.
+- [x] I have listed material external resources, reused code, and tools
       (see "External resources and tools" above).
-- [ ] I have disclosed any use of generative AI in accordance with the
+- [x] I have disclosed any use of generative AI in accordance with the
       assignment email (see "AI-use disclosure" above).
-- [ ] I can explain the submitted design and code during a follow-up
+- [x] I can explain the submitted design and code during a follow-up
       discussion.
