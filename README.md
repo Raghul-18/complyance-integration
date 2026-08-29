@@ -52,11 +52,6 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-> PowerShell may block the activation script the first time, with an
-> error about execution policies. If so, run
-> `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in that
-> same PowerShell window and try activating again.
-
 Edit `.env` and set `TRAINING_API_KEY` to any value you like. This is a
 local training key, not a real credential. Never commit `.env` itself
 (already covered by `.gitignore`).
