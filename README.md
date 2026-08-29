@@ -108,10 +108,6 @@ curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: <your-ap
 curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: <your-api-key>" -H "Idempotency-Key: demo-001" -H "Content-Type: application/json" -d "@samples/valid-invoice.json"
 ```
 
-> On PowerShell, `curl` is often aliased to `Invoke-WebRequest`, which
-> does not take the same flags. Calling `curl.exe` explicitly (as above)
-> bypasses the alias and uses the real curl binary instead.
-
 Check status (use the `documentId` from the response above):
 
 **macOS / Linux:**
