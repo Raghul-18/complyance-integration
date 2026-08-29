@@ -61,18 +61,13 @@ Runs on `http://127.0.0.1:8000`. `/health` and interactive docs at
 Submit an invoice:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/v1/invoices \
-  -H "X-API-Key: <your TRAINING_API_KEY>" \
-  -H "Idempotency-Key: demo-001" \
-  -H "Content-Type: application/json" \
-  -d @samples/valid-invoice.json
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: changeme-training-key" -H "Idempotency-Key: demo-001" -H "Content-Type: application/json" -d "@samples/valid-invoice.json"
 ```
 
 Check status (use the `documentId` from the response above):
 
 ```bash
-curl http://127.0.0.1:8000/api/v1/documents/<documentId>/status \
-  -H "X-API-Key: <your TRAINING_API_KEY>"
+curl.exe "http://127.0.0.1:8000/api/v1/documents/<documentId>/status" -H "X-API-Key: changeme-training-key"
 ```
 
 This is a **local prototype only** — it never calls any Complyance,
