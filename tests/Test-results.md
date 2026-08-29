@@ -5,7 +5,7 @@
 | # | Scenario | Expected status code | Expected outcome |
 |---|---|---|---|
 | 1 | Valid standard-rated invoice | 202 | Document created with status `PROCESSING`, a generated `documentId`, and `isTerminal: false`; status endpoint later reports `ACCEPTED`. |
-| 2 | Missing required seller TRN | 400 | Validation fails with a `REQUIRED` issue on field `invoice.seller.trn`; no document is created. |
+| 2 | Missing required seller TRN | 400 | Validation fails with `INVALID_FORMAT` on field `invoice.seller.trn` — a missing TRN and a malformed TRN hit the same regex check and share this code, there is no separate "required" case; no document is created. |
 | 3 | Invalid TRN format | 400 | Validation fails with `INVALID_FORMAT` on `invoice.seller.trn`; no document is created. |
 | 4 | Unsupported tax category | 400 | Validation fails with `INVALID_VALUE` on `invoice.lines[0].taxCategory`; no document is created. |
 | 5 | Incorrect total or tax calculation | 400 | Validation fails with `MISMATCH` on `invoice.totals.taxAmount` (submitted value doesn't match the calculated line total); no document is created. |

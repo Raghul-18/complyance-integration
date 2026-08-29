@@ -6,14 +6,16 @@ flowchart TD
     A["Customer ERP<br/>Desert Star Trading LLC"] -->|"POST /api/v1/invoices<br/>+ API Key + Idempotency-Key"| B["Integration Service"]
 
     B --> C{"Authentication<br/>& Correlation ID"}
-    C -->|Invalid| E["Structured Error Response<br/>401 / 403"]
+    C -->|Invalid| E["Structured Error Response<br/>401"]
     C -->|Valid| D["Validation & Mapping"]
 
     D -->|Invalid| F["Structured Validation Error<br/>400 + field paths"]
-    D -->|Valid| G["Idempotency Check"]
+    D -->|Valid| G{"Idempotency Check<br/>(idempotency_key + invoice_no)"}
 
-    G -->|Duplicate| H["Return existing documentId<br/>202"]
-    G -->|New| I["Generate documentId<br/>Persist record"]
+    G -->|"Same key, same payload<br/>(replay)"| H["Return existing documentId<br/>200 or 202"]
+    G -->|"Same key, different payload"| H2["409 IDEMPOTENCY_KEY_REUSE_MISMATCH"]
+    G -->|"New key, invoiceNo already used<br/>by a different document"| H3["409 DUPLICATE_INVOICE_NUMBER"]
+    G -->|"New key, new invoiceNo"| I["Generate documentId<br/>Persist record"]
 
     I --> J[("Document Storage<br/>SQLite / DB")]
     I --> K["Return 202 Accepted<br/>status=PROCESSING"]
@@ -26,7 +28,7 @@ flowchart TD
     B --> J
     J --> P["Status Response"]
 
-    Q["Monitoring & Support<br/>Logs, Alerts, Correlation ID"] -.-> B
+    Q["Monitoring & Support<br/>Logs, Correlation ID"] -.-> B
     Q -.-> J
     Q -.-> L
 ```
@@ -50,7 +52,7 @@ flowchart LR
     end
 
     subgraph Storage["Document storage (SQLite)"]
-        Docs[("documents<br/>UNIQUE(idempotency_key)")]
+        Docs[("documents<br/>UNIQUE(idempotency_key)<br/>UNIQUE(invoice_no)")]
         Audit[("audit_log<br/>append-only")]
     end
 
@@ -67,7 +69,6 @@ flowchart LR
     BG -.write.-> Audit
     ERP -->|"GET /status"| Auth
     Auth --> Docs
-    Docs --> AuditAPI
     Audit --> AuditAPI
     Service -.-> Logs
 ```
