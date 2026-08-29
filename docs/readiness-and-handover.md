@@ -126,6 +126,17 @@ correct.
     the assignment's required scenarios; it isn't covered by the ten
     required test scenarios or the six additional ones in
     `tests/test_additional_scenarios.py`.
+  - Only `AED` is accepted as `currency`; any other value returns
+    `UNSUPPORTED_CURRENCY`. See `docs/discovery-and-design.md` for how
+    multi-currency support would be added.
+  - The async processing step (`_finalize_processing` in `src/main.py`) is
+    a fixed-delay, deterministic threshold rule on `grossAmount` — not a
+    real downstream integration. Support staff should know there's no
+    actual validation/clearance system behind an `ACCEPTED` or `REJECTED`
+    status; it's a stand-in for the exercise.
+  - `GET /api/v1/audit` sits behind the same API key as the submit/status
+    endpoints; a real deployment would likely put it behind a separate
+    support-only role.
   - **Corrected from an earlier draft of this doc:** `payment.method` and
     the `amountDue = grossAmount minus prepaidAmount` reconciliation are
     both already enforced by `validation.py` and confirmed by a live
@@ -159,8 +170,14 @@ correct.
     `IDEMPOTENCY_KEY_REUSE_MISMATCH` above; the `invoice_no` already
     belongs to a different document under a *different* idempotency key
     (`persistence.py::DuplicateInvoiceNumberError`), not a retry of the
-    same request. The response body's `message` includes the existing
-    `documentId` to look up.
+    same request. **Correction:** the response body's `message` does
+    *not* include the existing `documentId` — verified directly against
+    `src/main.py`, it only names the `invoiceNo`. The existing
+    `documentId` is captured in the structured logs
+    (`existing_document_id`) and in the audit log entry's `details`
+    (`DUPLICATE_INVOICE_NUMBER_REJECTED`), so support staff need to pull
+    it from `GET /api/v1/audit` (filtered by `invoice_no` or correlation
+    ID) rather than from the API response itself.
   - `401 UNAUTHORIZED`: missing or incorrect `X-API-Key` header; the
     response body deliberately gives no detail beyond that, to avoid
     leaking whether a key format is close to valid.

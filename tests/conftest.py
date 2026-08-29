@@ -2,6 +2,7 @@ import importlib
 import json
 import os
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -28,8 +29,28 @@ def client(tmp_path, monkeypatch):
 
     from src.main import app as fresh_app
 
+    # src.main._finalize_processing runs on a fire-and-forget daemon
+    # thread. Because this fixture reload()s src.config/src.persistence
+    # in place for every test, a thread from THIS test that's still
+    # sleeping when the NEXT test's client fixture runs will pick up the
+    # next test's reloaded `settings` (module globals are looked up
+    # dynamically, and reload() mutates the same module object rather
+    # than replacing it) -- pointing it at a DB path that hasn't been
+    # init_db()'d yet, or no longer exists. That surfaces as
+    # PytestUnhandledThreadExceptionWarning: sqlite3.OperationalError:
+    # no such table: documents, attributed to whichever test happens to
+    # be running when the stale thread wakes up, not the test that
+    # actually started it. Track and join any thread spawned during this
+    # test before tearing down, so each test's background work finishes
+    # against ITS OWN settings before the next test reloads them.
+    baseline_threads = set(threading.enumerate())
+
     with TestClient(fresh_app) as c:
         yield c
+
+    for t in threading.enumerate():
+        if t not in baseline_threads and t.is_alive():
+            t.join(timeout=5)
 
 
 @pytest.fixture()
