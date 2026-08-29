@@ -25,12 +25,37 @@ Scenario and rules are fictional/synthetic per the assignment brief.
 
 ## Setup
 
+**macOS / Linux:**
+
 ```bash
 python3 -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 ```
+
+**Windows (Command Prompt):**
+
+```cmd
+python -m venv venv
+venv\Scripts\activate.bat
+pip install -r requirements.txt
+copy .env.example .env
+```
+
+**Windows (PowerShell):**
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+> PowerShell may block the activation script the first time, with an
+> error about execution policies. If so, run
+> `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in that
+> same PowerShell window and try activating again.
 
 Edit `.env` and set `TRAINING_API_KEY` to any value you like — this is a
 local training key, not a real credential. Never commit `.env` itself
@@ -58,16 +83,48 @@ Runs on `http://127.0.0.1:8000`. `/health` and interactive docs at
 
 ### Example requests
 
-Submit an invoice:
+Submit an invoice (replace `<your-api-key>` with the value you set for
+`TRAINING_API_KEY` in `.env`):
+
+**macOS / Linux (curl):**
 
 ```bash
-curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: changeme-training-key" -H "Idempotency-Key: demo-001" -H "Content-Type: application/json" -d "@samples/valid-invoice.json"
+curl -X POST "http://127.0.0.1:8000/api/v1/invoices" \
+  -H "X-API-Key: <your-api-key>" \
+  -H "Idempotency-Key: demo-001" \
+  -H "Content-Type: application/json" \
+  -d @samples/valid-invoice.json
 ```
+
+**Windows (Command Prompt, curl.exe — bundled with Windows 10+):**
+
+```cmd
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: <your-api-key>" -H "Idempotency-Key: demo-001" -H "Content-Type: application/json" -d "@samples/valid-invoice.json"
+```
+
+**Windows (PowerShell):**
+
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/invoices" -H "X-API-Key: <your-api-key>" -H "Idempotency-Key: demo-001" -H "Content-Type: application/json" -d "@samples/valid-invoice.json"
+```
+
+> On PowerShell, `curl` is often aliased to `Invoke-WebRequest`, which
+> doesn't take the same flags. Calling `curl.exe` explicitly (as above)
+> bypasses the alias and uses the real curl binary instead.
 
 Check status (use the `documentId` from the response above):
 
+**macOS / Linux:**
+
 ```bash
-curl.exe "http://127.0.0.1:8000/api/v1/documents/<documentId>/status" -H "X-API-Key: changeme-training-key"
+curl "http://127.0.0.1:8000/api/v1/documents/<documentId>/status" \
+  -H "X-API-Key: <your-api-key>"
+```
+
+**Windows (Command Prompt or PowerShell):**
+
+```cmd
+curl.exe "http://127.0.0.1:8000/api/v1/documents/<documentId>/status" -H "X-API-Key: <your-api-key>"
 ```
 
 This is a **local prototype only** — it never calls any Complyance,
