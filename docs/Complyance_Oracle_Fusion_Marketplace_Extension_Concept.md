@@ -174,7 +174,6 @@ That is the product I would build with the Complyance team: **not another e-invo
 - [Founder Brief: Page 2](#founder-brief-page-2)
   - [What Makes This More Than a Connector](#what-makes-this-more-than-a-connector)
 - [Executive Summary](#executive-summary)
-- [Research Verification Note](#research-verification-note)
 - [1. Research Summary: What Complyance Already Provides](#1-research-summary-what-complyance-already-provides)
 - [2. The Market Gap I Would Target](#2-the-market-gap-i-would-target)
 - [3. Product Concept](#3-product-concept)
