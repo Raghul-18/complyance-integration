@@ -1484,6 +1484,4 @@ flowchart TD
 
 The extension becomes the **Oracle distribution and workflow layer for Complyance**.
 
-That is the opportunity I believe is worth validating with the founder and technical team.
-
 ---
