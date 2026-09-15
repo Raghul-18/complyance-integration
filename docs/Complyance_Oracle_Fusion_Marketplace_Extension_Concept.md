@@ -1,13 +1,8 @@
 # Concept Proposal: Complyance Oracle Fusion Cloud ERP Marketplace Extension
 
-**Prepared for:** Complyance Founder & Technical Team  
-**Proposed role:** Associate Integration Engineer  
-**Document type:** Product concept + technical proposal  
-**Prepared By:** Raghul Prasanth S P (raghul.sp18@gmail.com)
-
 ---
 
-# Founder Brief: The Idea in Two Pages
+# Brief: The Idea in Two Pages
 
 > **Purpose:** A fast read for the founder and technical leadership. The sections after this brief contain the deeper API research, architectural rationale, and implementation detail.
 
@@ -72,7 +67,7 @@ Or, for a validation issue:
 
 The raw Complyance API remains underneath, but the customer does not have to become an API integrator to operate e-invoicing.
 
-# Founder Brief: Page 2
+# Brief: Page 2
 
 ## What makes this more than a connector
 
